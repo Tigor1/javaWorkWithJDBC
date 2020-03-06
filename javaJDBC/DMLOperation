@@ -1,0 +1,91 @@
+INSERT INTO actor (name, surname, age) VALUES ('Leonardo', 'DiCaprio', 45);
+INSERT INTO actor (name, surname, age) VALUES ('Daniel', 'Craig', 52);
+INSERT INTO actor (name, surname, age) VALUES ('Ana', 'de Armas', 31);
+INSERT INTO actor (name, surname, age) VALUES ('Chris', 'Evans', 38);
+INSERT INTO actor (name, surname, age) VALUES ('Henry', 'Cavill', 36);
+INSERT INTO actor (name, surname, age) VALUES ('Anya', 'Chalotra', 23);
+INSERT INTO actor (name, surname, age) VALUES ('Frey', 'Allan', 18);
+INSERT INTO actor (name, surname, age) VALUES ('Charlie', 'Hunnam', 39);
+INSERT INTO actor (name, surname, age) VALUES ('Matthew', 'McConaughey', 50);
+INSERT INTO actor (name, surname, age) VALUES ('Michelle', 'Dockery', 38);
+INSERT INTO actor (name, surname, age) VALUES ('Colin', 'Farrell', 43);
+INSERT INTO actor (name, surname, age) VALUES ('Joaquin', 'Phoenix', 46);
+
+
+INSERT INTO film_director (name, surname, age) VALUES ('Rian', 'Johnson', 46);
+INSERT INTO film_director (name, surname, age) VALUES ('Guy', 'Ritchie', 51);
+INSERT INTO film_director (name, surname, age) VALUES ('Sean', 'Daniel', 68);
+INSERT INTO film_director (name, surname, age) VALUES ('Quentin', 'Tarantino', 56);
+
+INSERT INTO writer (name, surname, age) VALUES ('Nick', 'Arthurs', 45);
+INSERT INTO writer (name, surname, age) VALUES ('Ivan', 'Atkinson', 35);
+INSERT INTO writer (name, surname, age) VALUES ('Rian', 'Johnson', 46);
+INSERT INTO writer (name, surname, age) VALUES ('Quentin', 'Tarantino', 56);
+
+INSERT INTO film_award (name, event_date) VALUES ('Oscar', '2019-01-26');
+INSERT INTO film_award (name, event_date) VALUES ('Golden Globes', '2019-05-18');
+INSERT INTO film_award (name, event_date) VALUES ('BAFTA', '2019-01-26');
+
+DELETE FROM film_award WHERE id > 3;
+
+INSERT INTO film (title, release_date, director, studio) VALUES ('The Gentelmen', '2019-11-15', 2, 'STX Entertainment');
+INSERT INTO film (title, release_date, director, studio) VALUES ('The witcher', '2019-05-27', 3, 'Netflix');
+INSERT INTO film (title, release_date, director, studio) VALUES ('Once upon a time in Hollywood', '2018-11-08', 4, 'Sony');
+
+INSERT INTO writer_has_film (film_id, writer_id) VALUES (1, 2);
+INSERT INTO writer_has_film (film_id, writer_id) VALUES (2, 3);
+INSERT INTO writer_has_film (film_id, writer_id) VALUES (3, 4);
+
+INSERT INTO film_has_award (film_id, award_id) VALUES (1, 3);
+INSERT INTO film_has_award (film_id, award_id) VALUES (3, 1);
+
+
+INSERT INTO writer_has_film (film_id, writer_id) VALUES (1, 2);
+INSERT INTO writer_has_film (film_id, writer_id) VALUES (2, 3);
+INSERT INTO writer_has_film (film_id, writer_id) VALUES (3, 4);
+
+INSERT INTO actor_has_film (film_id, actor_id)
+    VALUES ((SELECT id FROM film WHERE title = 'The Gentelmen'), 8);
+INSERT INTO actor_has_film (film_id, actor_id)
+    VALUES ((SELECT id FROM film WHERE title = 'The Gentelmen'), 9);
+INSERT INTO actor_has_film (film_id, actor_id)
+    VALUES ((SELECT id FROM film WHERE title = 'The Gentelmen'), 10);
+INSERT INTO actor_has_film (film_id, actor_id)
+    VALUES ((SELECT id FROM film WHERE title = 'The Gentelmen'), 11);
+INSERT INTO actor_has_film (film_id, actor_id)
+    VALUES ((SELECT id FROM film WHERE title = 'The witcher'), 5);
+INSERT INTO actor_has_film (film_id, actor_id)
+    VALUES ((SELECT id FROM film WHERE title = 'The witcher'), 6);
+INSERT INTO actor_has_film (film_id, actor_id)
+    VALUES ((SELECT id FROM film WHERE title = 'The witcher'), 7);
+INSERT INTO actor_has_film (film_id, actor_id)
+    VALUES ((SELECT id FROM film WHERE title = 'Once upon a time in Hollywood'), 1);
+INSERT INTO actor_has_film (film_id, actor_id)
+    VALUES ((SELECT id FROM film WHERE title = 'Once upon a time in Hollywood'), 24);
+INSERT INTO actor_has_film (film_id, actor_id)
+    VALUES ((SELECT id FROM film WHERE title = 'Once upon a time in Hollywood'), 25);
+
+SELECT f.title FROM film_award as fa
+    INNER JOIN film_has_award ON fa.name = 'BAFTA' AND fa.id = film_has_award.award_id
+    INNER JOIN film as f ON f.id = film_has_award.film_id;
+
+ALTER TABLE  film_award ADD COLUMN event_date DATE NOT NULL DEFAULT  CURRENT_DATE;
+
+UPDATE film_award SET event_date = '2019-12-23' WHERE id = 1;
+UPDATE film_award SET event_date = '2019-05-15' WHERE id = 2;
+UPDATE film_award SET event_date = '2020-01-15' WHERE id = 3;
+
+SELECT f.id, f.title, f.studio, f.release_date, fd.name, fd.surname, w.name, w.surname FROM film AS f
+    INNER JOIN film_director AS fd ON f.director = fd.id
+    INNER JOIN writer AS w ON w.id = (SELECT whf.writer_id FROM writer_has_film AS whf WHERE whf.film_id = f.id);
+
+SELECT a.name, a.surname, a.age FROM actor_has_film ahf
+    INNER JOIN actor a on ahf.actor_id = a.id AND ahf.film_id =
+                                                    (SELECT f.id FROM film f WHERE f.title = 'The Gentelmen');
+
+SELECT w.name, w.surname, w.age FROM writer_has_film whf
+    INNER JOIN writer w ON whf.writer_id = w.id AND whf.film_id =
+                                                    (SELECT f.id FROM film f WHERE f.title = 'The Gentelmen');
+
+SELECT fa.name, fa.event_date FROM film_has_award fha
+    INNER JOIN film_award fa ON fha.award_id = fa.id AND fha.film_id = ;

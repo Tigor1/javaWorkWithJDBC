@@ -1,0 +1,68 @@
+#list all tabl in curent db
+SELECT table_name
+FROM information_schema.tables
+WHERE table_schema = 'public'
+ORDER BY table_name;
+
+DROP TABLE IF EXISTS actors;
+
+CREATE TABLE IF NOT EXISTS actor (
+    id SERIAL PRIMARY KEY,
+    name CHAR(40),
+    surname CHAR(40),
+    age int
+);
+
+DROP TABLE IF EXISTS award;
+
+CREATE TABLE IF NOT EXISTS  film_award (
+    id SERIAL PRIMARY KEY,
+    name CHAR(40),
+    event_date DATE NOT NULL DEFAULT CURRENT_DATE
+);
+
+DROP TABLE IF EXISTS directors;
+
+CREATE TABLE IF NOT EXISTS film_director (
+    id SERIAL PRIMARY KEY,
+    name CHAR(40),
+    surname CHAR(40),
+    age int
+);
+
+DROP TABLE IF EXISTS writer;
+
+CREATE TABLE IF NOT EXISTS writer (
+    id SERIAL PRIMARY KEY,
+    name CHAR(40),
+    surname CHAR(40),
+    age int
+);
+
+CREATE TABLE IF NOT EXISTS film (
+    id SERIAL PRIMARY KEY,
+    title CHAR(100),
+    release_date DATE NOT NULL DEFAULT CURRENT_DATE
+);
+
+ALTER TABLE film ADD COLUMN studio char(40);
+ALTER TABLE film ADD COLUMN director int REFERENCES film_director(id);
+ALTER TABLE film ADD COLUMN director int REFERENCES film_director(id);
+
+CREATE TABLE IF NOT EXISTS actor_has_film (
+    film_id int REFERENCES film(id),
+    actor_id int REFERENCES actor(id),
+    constraint id PRIMARY KEY (film_id, actor_id)
+);
+
+CREATE TABLE IF NOT EXISTS film_has_award (
+   film_id int REFERENCES film(id),
+   award_id int REFERENCES film_award(id),
+   constraint id_af PRIMARY KEY (film_id, award_id)
+);
+
+CREATE TABLE IF NOT EXISTS writer_has_film (
+    film_id int REFERENCES film(id),
+    writer_id int REFERENCES writer(id),
+    constraint id_wf PRIMARY KEY (film_id, writer_id)
+);
