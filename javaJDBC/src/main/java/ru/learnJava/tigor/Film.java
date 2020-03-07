@@ -2,6 +2,7 @@ package ru.learnJava.tigor;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class Film  {
@@ -13,6 +14,20 @@ public class Film  {
     private List<Writer> writers = new ArrayList<>();
     private List<Actor> actors = new ArrayList<>();
     private List<Award> awards = new ArrayList<>();
+
+    public Film() {
+
+    }
+
+    public Film(String title, LocalDate releaseDate, String studio, Director director, List<Writer> writers, List<Actor> actors, List<Award> awards) {
+        this.title = title;
+        this.releaseDate = releaseDate;
+        this.studio = studio;
+        this.director = director;
+        this.writers = writers;
+        this.actors = actors;
+        this.awards = awards;
+    }
 
     @Override
     public String toString() {
@@ -28,7 +43,7 @@ public class Film  {
             result.append(" ").append(writer.getName()).append(" ").append(writer.getSurname()).append(",");
         result.append("\n\t\tawards: ");
         for (Award award : awards)
-            result.append(" ").append(award.getName()).append(" ").append(award.getEventDate());
+            result.append(" ").append(award.getName()).append(" ").append(award.getEventDate()).append(" ").append(award.getNomination());
         return result.toString();
     }
 
@@ -69,7 +84,7 @@ public class Film  {
     }
 
     public void setReleaseDate(LocalDate releaseDate) {
-        releaseDate = releaseDate;
+        this.releaseDate = releaseDate;
     }
 
     public Director getDirector() {

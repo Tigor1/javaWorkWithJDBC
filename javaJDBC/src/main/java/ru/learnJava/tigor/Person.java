@@ -1,10 +1,10 @@
 package ru.learnJava.tigor;
 
 public class Person {
-    private int id;
-    private String name;
-    private String surname;
-    private int age;
+    protected int id;
+    protected String name;
+    protected String surname;
+    protected int age;
 
     public int getId() {
         return id;

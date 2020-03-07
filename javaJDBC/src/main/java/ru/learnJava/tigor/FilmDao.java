@@ -1,9 +1,6 @@
 package ru.learnJava.tigor;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -18,8 +15,7 @@ public class FilmDao {
     public List<Actor> getActorsById(int id) {
         List<Actor> actors = new ArrayList<>();
 
-        try {
-            Statement statement = connection.createStatement();
+        try (Statement statement = connection.createStatement()) {
 
             ResultSet rs = statement.executeQuery("SELECT a.name, a.surname, a.age FROM actor_has_film ahf" +
                     "    INNER JOIN actor a on ahf.actor_id = a.id AND ahf.film_id =" + id + ";");
@@ -40,16 +36,16 @@ public class FilmDao {
     public List<Award> getAwardsById(int id) {
         List<Award> awards = new ArrayList<>();
 
-        try {
-            Statement statement = connection.createStatement();
+        try (Statement statement = connection.createStatement()) {
 
-            ResultSet rs = statement.executeQuery("SELECT fa.id, fa.name, fa.event_date FROM film_has_award fha\n" +
+            ResultSet rs = statement.executeQuery("SELECT fa.id, fa.name, fa.event_date, fa.nomination FROM film_has_award fha\n" +
                     "    INNER JOIN film_award fa ON fha.award_id = fa.id AND fha.film_id = " + id + ";");
             while (rs.next()) {
                 Award award = new Award();
                 award.setId(rs.getInt("id"));
                 award.setName(rs.getString("name").trim());
-                award.setEventDate(LocalDate.parse(rs.getString("event_date")));
+                award.setEventDate(rs.getDate("event_date").toLocalDate());
+                award.setNomination(rs.getString("nomination"));
                 awards.add(award);
             }
         } catch (SQLException ex) {
@@ -61,8 +57,7 @@ public class FilmDao {
     public List<Writer> getWritersById(int id) {
         List<Writer> writers = new ArrayList<>();
 
-        try {
-            Statement statement = connection.createStatement();
+        try (Statement statement = connection.createStatement()) {
 
             ResultSet rs = statement.executeQuery("SELECT w.name, w.surname, w.age FROM writer_has_film whf " +
                     "    INNER JOIN writer w ON whf.writer_id = w.id AND whf.film_id = " + id + ";");
@@ -80,11 +75,171 @@ public class FilmDao {
         return writers;
     }
 
+    public void addFilm(Film film) {
+        PreparedStatement addActor = null;
+        PreparedStatement addWriter = null;
+        PreparedStatement addAward = null;
+        PreparedStatement addDirector = null;
+        PreparedStatement addFilm = null;
+        PreparedStatement addActorHasFilm = null;
+        PreparedStatement addFilmHasAward = null;
+        PreparedStatement addWriterHasFilm = null;
+
+        String actorSql = "INSERT INTO actor (name, surname, age)" +
+                            " VALUES (?, ?, ?) ON CONFLICT (name, surname, age) DO NOTHING";
+        String writerSql = "INSERT INTO writer (name, surname, age) " +
+                            " VALUES(?, ?, ?) ON CONFLICT (name, surname, age) DO NOTHING;";
+        String awardSql = "INSERT INTO film_award (name, event_date, nomination) " +
+                "VALUES(?, ?, ?) ON CONFLICT (name, event_date, nomination) DO NOTHING;";
+
+        String directorSql = "INSERT INTO film_director(name, surname, age) " +
+                "VALUES(?, ?, ?) ON CONFLICT (name, surname, age) DO NOTHING;";
+
+        String filmSql = "INSERT INTO film (title, release_date, director, studio) " +
+                " VALUES (?, ?, ?, ?) ON CONFLICT (title, release_date, director) DO NOTHING ;";
+
+        String actorHasFilmSql = "INSERT INTO actor_has_film (film_id, actor_id) VALUES (?, ?);";
+        String filmHasAwardSql = "INSERT INTO film_has_award (film_id, award_id) VALUES (?, ?);";
+        String writerHasFilmSql = "INSERT INTO writer_has_film (film_id, writer_id) VALUES (?, ?);";
+
+        try {
+            connection.setAutoCommit(false);
+
+            addDirector = connection.prepareStatement(directorSql, Statement.RETURN_GENERATED_KEYS);
+            addFilm = connection.prepareStatement(filmSql, Statement.RETURN_GENERATED_KEYS);
+
+            addFilm.setString(1, film.getTitle());
+            addFilm.setDate(2, Date.valueOf(film.getReleaseDate()));
+
+            int idDirector = addDirector(film.getDirector(), addDirector);
+            addFilm.setInt(3, idDirector);
+            addFilm.setString(4, film.getStudio());
+            addFilm.executeUpdate();
+
+            int idFilm = 0;
+            ResultSet rs = addFilm.getGeneratedKeys();
+            if (rs.next()) idFilm = rs.getInt(1);
+
+            addActor = connection.prepareStatement(actorSql, Statement.RETURN_GENERATED_KEYS);
+            addWriter = connection.prepareStatement(writerSql, Statement.RETURN_GENERATED_KEYS);
+            addAward = connection.prepareStatement(awardSql, Statement.RETURN_GENERATED_KEYS);
+            addActorHasFilm = connection.prepareStatement(actorHasFilmSql);
+            addFilmHasAward = connection.prepareStatement(filmHasAwardSql);
+            addWriterHasFilm = connection.prepareStatement(writerHasFilmSql);
+
+            for (Actor actor : film.getActors())
+                addActorHasFilm(idFilm, addActor(actor, addActor), addActorHasFilm);
+            for (Writer writer : film.getWriters())
+                addWriterHasFilm(idFilm, addWriter(writer, addWriter), addWriterHasFilm);
+            for (Award award : film.getAwards()) {
+                int awardId = addAward(award, addAward);
+                addFilmHasAward(idFilm, awardId, addFilmHasAward);
+            }
+            connection.commit();
+        } catch (SQLException ex) {
+            System.out.println(ex.getMessage());
+            try {
+                connection.rollback();
+            } catch (SQLException e1) {
+                ex.printStackTrace();
+            }
+        } finally {
+            try {
+                if (addActor != null) addActor.close();
+                if (addWriter != null) addWriter.close();
+                if (addAward != null) addAward.close();
+                if (addDirector != null) addDirector.close();
+                if (addFilm != null) addFilm.close();
+                if (addActorHasFilm != null) addActorHasFilm.close();
+                if (addFilmHasAward != null) addFilmHasAward.close();
+                if (addWriterHasFilm != null) addWriterHasFilm.close();
+            } catch (SQLException e2) {
+                System.out.println(e2.getMessage());
+            }
+        }
+    }
+
+    public void addActorHasFilm(int filmId, int actorId, PreparedStatement addAhf) throws SQLException {
+        addAhf.setInt(1, filmId);
+        addAhf.setInt(2, actorId);
+        addAhf.executeUpdate();
+    }
+
+    public void addFilmHasAward(int filmId, int awardId, PreparedStatement addFha) throws SQLException {
+        addFha.setInt(1, filmId);
+        addFha.setInt(2, awardId);
+        addFha.executeUpdate();
+    }
+
+    public void addWriterHasFilm(int filmId, int writerId, PreparedStatement addWhf) throws SQLException {
+        addWhf.setInt(1, filmId);
+        addWhf.setInt(2, writerId);
+        addWhf.executeUpdate();
+    }
+
+    public int addDirector(Director director, PreparedStatement addDirector) throws SQLException {
+        int result = 0;
+
+        addDirector.setString(1, director.getName());
+        addDirector.setString(2, director.getSurname());
+        addDirector.setInt(3, director.getAge());
+
+        addDirector.executeUpdate();
+        ResultSet rs = addDirector.getGeneratedKeys();
+        if (rs.next())
+            result = rs.getInt(1);
+        return result;
+    }
+
+    public int addActor(Actor actor, PreparedStatement addActor) throws SQLException {
+        int result = 0;
+
+        addActor.setString(1, actor.getName());
+        addActor.setString(2, actor.getSurname());
+        addActor.setInt(3, actor.getAge());
+
+        addActor.executeUpdate();
+        ResultSet id = addActor.getGeneratedKeys();
+
+        if (id.next())
+            result = id.getInt(1);
+        return result;
+    }
+
+    public int addWriter(Writer writer, PreparedStatement addWriter) throws SQLException {
+        int result = 0;
+
+        addWriter.setString(1, writer.getName());
+        addWriter.setString(2, writer.getSurname());
+        addWriter.setInt(3, writer.getAge());
+
+        addWriter.executeUpdate();
+        ResultSet id = addWriter.getGeneratedKeys();
+
+        if (id.next())
+            result = id.getInt(1);
+        return result;
+    }
+
+    public int addAward(Award award, PreparedStatement addAward) throws SQLException {
+        int result = 0;
+
+        addAward.setString(1, award.getName());
+        addAward.setDate(2, Date.valueOf(award.getEventDate()));
+        addAward.setString(3, award.getNomination());
+
+        addAward.executeUpdate();
+        ResultSet id = addAward.getGeneratedKeys();
+
+        if (id.next())
+            result = id.getInt(1);
+        return result;
+    }
+
     public List<Film> getALLFilm() {
         List<Film> films = new ArrayList<>();
 
-        try {
-            Statement statement = connection.createStatement();
+        try (Statement statement = connection.createStatement()) {
 
             ResultSet rs = statement.executeQuery("SELECT f.id, f.title, f.studio, f.release_date, fd.name, fd.surname, w.name, w.surname FROM film AS f" +
                     "    INNER JOIN film_director AS fd ON f.director = fd.id" +
@@ -94,7 +249,7 @@ public class FilmDao {
                 film.setId(rs.getInt("id"));
                 film.setTitle(rs.getString("title").trim());
                 film.setStudio(rs.getString("studio").trim());
-                film.setReleaseDate(LocalDate.parse(rs.getString("release_date")));
+                film.setReleaseDate(rs.getDate("release_date").toLocalDate());
                 film.setActors(getActorsById(film.getId()));
                 film.setWriters(getWritersById(film.getId()));
                 film.setAwards(getAwardsById(film.getId()));

@@ -1,6 +1,9 @@
 package ru.learnJava.tigor;
 
 import java.sql.*;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 public class App {
     private static final String USER = "tigor";
@@ -11,8 +14,27 @@ public class App {
     public static void main(String[] args) {
         Connection connection = geConnection(URL, USER, PASSWD);
         FilmDao film = new FilmDao(connection);
+
+        List<Actor> actors = new ArrayList<>();
+        List<Award> awards = new ArrayList<>();
+        List<Writer> writers = new ArrayList<>();
+
+        writers.add(new Writer("Writer", "Writerovich", 34));
+        actors.add(new Actor("Actor1", "Actorovich1", 21));
+        actors.add(new Actor("Actor2", "Actorovich2", 28));
+        actors.add(new Actor("Actor3", "Actorovich3", 31));
+        awards.add(new Award("Award1", LocalDate.parse("2020-01-24"), "Best of the best"));
+        Film film1 = new Film("New Film", LocalDate.parse("2020-01-23"), "Super studio", new Director("Director", "Directovich", 45),
+                writers, actors, awards);
+        film.addFilm(film1);
+
         for(Film f : film.getALLFilm())
             System.out.println(f);
+        try {
+            connection.close();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
     }
 
     private static Connection geConnection(String url, String user, String passwd) {
