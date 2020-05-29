@@ -1,9 +1,16 @@
 package ru.learnJava.tigor;
 
+import ru.learnJava.tigor.DAO.FilmDao;
+import ru.learnJava.tigor.Entities.Actor;
+import ru.learnJava.tigor.Entities.Director;
+import ru.learnJava.tigor.Entities.Film;
+import ru.learnJava.tigor.Entities.Writer;
+
 import java.sql.*;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
+import java.util.Set;
 
 public class App {
     private static final String USER = "tigor";
@@ -13,28 +20,81 @@ public class App {
 
     public static void main(String[] args) {
         Connection connection = geConnection(URL, USER, PASSWD);
-        FilmDao film = new FilmDao(connection);
+        ConsoleHelper consoleHelper = new ConsoleHelper();
+        FilmDao filmDao = new FilmDao(connection);
 
-        List<Actor> actors = new ArrayList<>();
-        List<Award> awards = new ArrayList<>();
-        List<Writer> writers = new ArrayList<>();
+        printMenu();
+        int command;
+        try (Scanner scanner = new Scanner(System.in)) {
+            do {
+                System.out.print("Enter command: ");
+                command = scanner.nextInt();
 
-        writers.add(new Writer("Writer", "Writerovich", 34));
-        actors.add(new Actor("Actor1", "Actorovich1", 21));
-        actors.add(new Actor("Actor2", "Actorovich2", 28));
-        actors.add(new Actor("Actor3", "Actorovich3", 31));
-        awards.add(new Award("Award1", LocalDate.parse("2020-01-24"), "Best of the best"));
-        Film film1 = new Film("New Film", LocalDate.parse("2020-01-23"), "Super studio", new Director("Director", "Directovich", 45),
-                writers, actors, awards);
-        film.addFilm(film1);
+                switch (command) {
+                    case 1:
+                        Film film = consoleHelper.getFilmFromUser();
+                        filmDao.addFilm(film);
+                        break;
+                    case 2:
+                        List<Film> films =  filmDao.getMostAwardedFilm();
+                        films.forEach(System.out::println);
+                        break;
+                    case 3:
+                        Director director = consoleHelper.getDirectorFromUser();
+                        int amount = filmDao.getAmountFilmOfDirector(director);
+                        System.out.println(amount);
+                        break;
+                    case 4:
+                        String studio = consoleHelper.getString();
+                        List<Director> directors = filmDao.getDirectorsByStudio(studio);
+                        directors.forEach(System.out::println);
+                        break;
+                    case 5:
+                        Actor actor = consoleHelper.getActorFromUser();
+                        LocalDate from = consoleHelper.getDate();
+                        LocalDate to = consoleHelper.getDate();
+                        List<Film> films3 = filmDao.getAllFilmOfActorForPeriod(actor, from, to);
+                        films3.forEach(System.out::println);
+                        break;
+                    case 6:
+                        Actor actor1 = consoleHelper.getActorFromUser();
+                        Set<Writer> writers = filmDao.getAllWriterByActor(actor1);
+                        System.out.println("Writers:");
+                        writers.forEach(System.out::println);
+                        break;
+                    case 7:
+                        List<Film> films2 = filmDao.getALLFilm();
+                        films2.forEach(System.out::println);
 
-        for(Film f : film.getALLFilm())
-            System.out.println(f);
+                        break;
+                    case 8:
+                        System.out.println("Goodbye");
+                        break;
+                    default:
+                        System.out.println("This command does not exist!");
+                        break;
+                }
+            } while (command != 8);
+        }
+
         try {
             connection.close();
         } catch (SQLException ex) {
             ex.printStackTrace();
         }
+    }
+
+    public static void printMenu() {
+        System.out.println("-----------------------Film Collections menu-----------------------\n" +
+                            "       [1]  Add film\n" +
+                            "       [2]  Show the most awarded film(в задании 1)\n" +
+                            "       [3]  Show amount films of Director(в задании 2)\n" +
+                            "       [4]  Show all Directors which have film on particular studio(в задании 3)\n" +
+                            "       [5]  Show all film in which particular actor plays(в задании 4)\n" +
+                            "       [6]  Show all writers films in the films of which actors played(в задании 5)\n" +
+                            "       [7]  Show all films\n" +
+                            "       [8]  Exit\n" +
+                "--------------------------------------------------------------------");
     }
 
     private static Connection geConnection(String url, String user, String passwd) {

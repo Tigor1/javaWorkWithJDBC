@@ -1,4 +1,4 @@
-package ru.learnJava.tigor;
+package ru.learnJava.tigor.Entities;
 
 public class Director extends Person {
     public Director() {
@@ -10,5 +10,10 @@ public class Director extends Person {
         this.name = name;
         this.surname = surname;
         this.age = age;
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
     }
 }

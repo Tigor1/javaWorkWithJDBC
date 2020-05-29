@@ -1,4 +1,4 @@
-package ru.learnJava.tigor;
+package ru.learnJava.tigor.Entities;
 
 public class Actor extends Person {
 

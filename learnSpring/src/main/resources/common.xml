@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+        <bean id="client" class="Client">
+            <constructor-arg value="1"/>
+            <constructor-arg value="Alex Popov"/>
+        </bean>
+
+    <bean id="event" class="Event" scope="prototype">
+        <constructor-arg>
+            <bean class="java.util.Date"/>
+        </constructor-arg>
+        <constructor-arg>
+            <bean class="java.text.DateFormat"  factory-method="getDateInstance"></bean>
+        </constructor-arg>
+    </bean>
+
+        <bean id="eventLogger" class="ConsoleEventLogger"/>
+
+        <bean id="app" class="App">
+            <constructor-arg ref="client"/>
+            <constructor-arg ref="eventLogger"/>
+        </bean>
+</beans>

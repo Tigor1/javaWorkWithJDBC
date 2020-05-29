@@ -1,0 +1,104 @@
+Основа spring это Core:
+beans - отвечает за BeanFactory которая является сложной реализацией паттерна Фабрика (GoF).
+
+core - обеспечивает ключевые части фреймворка, включая свойства IoC(Inversion of control) и DI(Dependency injection).
+
+context - построен на основе Beans и Core и позволяет получить доступ к любому объекту, который определён в
+     настройках. Ключевым элементом модуля Context является интерфейс ApplicationContext.
+
+SpEL - специальный язык выражений, который дает вам возможность обращаться к вашим бинам прямо внутри XML-конфигурации
+    Spring и настраивать их в зависимости от различных, иногда даже весьма сложных условий. Модуль, отвечающий за эту
+    функциональность автоматически подгружает spring-core.
+
+spring как контейнер, он управлеят жизненным циклом контейнеров которые он создает и которые в нем находяться.
+В xml или спомощью анатаций мы описываем так называемые bean, которые spring сам создаст и внедрит в них зависимости.
+
+Основаня фишка это Dependency injection - классы получают свои зависимости, а не создают их сами.
+Еще одна фишка spring это AOP.
+
+модуль AOP (https://docs.spring.io/spring/docs/2.5.x/reference/aop.html)
+
+подключаем  spring к проекту
+
+В maven
+
+...
+    <dependencies>
+        <!-- https://mvnrepository.com/artifact/org.springframework/spring-context -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId> --  указываем модуль который нам нужен, maven подгрузит зависимости для него сам
+            <version>5.2.4.RELEASE</version>
+        </dependency>
+
+        --   так же остальные нужные модули для нашего приложения
+        ...
+    </dependencies>
+...
+
+Конгда spring создает бины он проверяет что нет циклической зависимости.
+Самые популярные способы конфигурировать бины это xml и анотации.
+
+xml:
+ <?xml version="1.0" encoding="UTF-8"?>
+ <beans xmlns="http://www.springframework.org/schema/beans"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+         <bean>
+
+         </bean>
+ </beans>
+
+ id - должен быть уникальным,может быть только один
+ name - может иметь несколько имен. Например если бин реализует несколько интерфейсов, то
+    можео перечислить их через запятую/пробел, и потом использовать любое для их внедрения.
+
+ есть тег <alias name="A" alias="B" /> -- теперь к бин A можно указывать как B.
+
+ для внедрения зависимостей через конструктор есть тег
+ <constructor-arg [index="0"] [type="java.lang.Integer"] ref="" value="1"/> value - для статической инициализации
+ index - указывает какой по счету аргумент(по-умолчанию в том порядке в котором они написаны).
+    Если типы аргументов разные sping поймет в каком порядке их нужно передавать в bean. Лучше всего
+    указывать тип самостоятельно type.
+ ref - указывает на зависимость которую мы хотим внедрить.
+
+Если  бине есть конструктор с параметрами, то надо указать и конструктор по-умолчанию.
+
+В spring есть два контейнера:
+BeanFactory - простейший контейнер. Он может только содавать бины и внедрять зависимости.
+ApplecationContext(Interface) - делает все тоже самое по что и BeanFactory, еще предоставляем методы
+    по управлению бинами.
+- СlassPathXmlApplicationContext
+- FileSystemXmlApplicationContext
+- AnnotationConfigApplicationContext
+- XmlWebApplicationContext
+- StaticApplicationContext
+
+если в конструктор ClassPathApplicationContext передать несколько контекстов, он создаст один контекст
+
+
+bean scope - по-умолчанию все бины в spring singltone(создаются 1 раз). Можно задать prototype(каждый раз
+будет создаваться новый bean);
+
+еще есть scope:
+request - создается на время обработки запроса
+session - живет на протяжении http session
+global-session - живет на протяжении global http session
+
+в spring можно объявлять внутреннии бины в <construct-arg>
+
+ <bean id="event" class="Event" scope="prototype">
+        <constructor-arg>
+        -- это бин виден только в это construct-arg
+            <bean class="java.util.Date"/>
+        </constructor-arg>
+ </bean>
+
+ если мы хотим создать класс, экземпляр которого создается только вызовом статического метода, то мы должны
+ в атрибуте factory-method указать название этого метода
+
+ <bean class="java.text.DateFormat" factory-method="getDateInstance"></bean>
+
+init-method="preconstructor" - вызывает preconstructor перед создание бина (имя любое, аргументов нет)
+destroy-method="destructor" - для его вызова необходимо у context  вызвать метод  close(), этот метод есть у
+ConfigurableApplicationContext (наследуется от ApplicationContext)
